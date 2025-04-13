@@ -7,6 +7,8 @@
   <title>Broken Link Checker Report</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
       --primary-color: #2b2d42;
@@ -141,9 +143,13 @@
       border-collapse: collapse;
     }
 
+    .data-table th,
+    .data-table td {
+      padding: 1rem;
+    }
+
     .data-table th {
       background: #f8f9fa;
-      padding: 1rem;
       text-align: left;
       font-weight: 600;
       color: var(--primary-color);
@@ -151,47 +157,41 @@
       position: relative;
     }
 
-    .data-table th:hover {
-      background-color: #e9ecef;
-    }
-
-    .data-table th.sortable::after {
-      content: '↕';
-      position: absolute;
-      right: 8px;
-      color: #999;
-    }
-
-    .data-table th.sort-asc::after {
-      content: '↑';
-      color: var(--primary-color);
-    }
-
-    .data-table th.sort-desc::after {
-      content: '↓';
-      color: var(--primary-color);
-    }
-
     .data-table td {
-      padding: 1rem;
       border-top: 1px solid var(--border-color);
     }
 
-    .data-table tr:hover {
-      background-color: #f8f9fa;
+    /* Column width distribution */
+    .data-table th:nth-child(1),
+    .data-table td:nth-child(1) {
+      width: 40%;
     }
 
-    .url-cell {
-      max-width: 400px;
+    .data-table th:nth-child(2),
+    .data-table td:nth-child(2) {
+      width: 15%;
+      white-space: nowrap;
     }
 
-    .url-cell a {
+    .data-table th:nth-child(3),
+    .data-table td:nth-child(3) {
+      width: 15%;
+      white-space: nowrap;
+    }
+
+    .data-table th:nth-child(4),
+    .data-table td:nth-child(4) {
+      width: 30%;
+    }
+
+    .url-cell a, .source-cell a {
       color: #0066cc;
       text-decoration: none;
       word-break: break-all;
+      display: block;
     }
 
-    .url-cell a:hover {
+    .url-cell a:hover, .source-cell a:hover {
       text-decoration: underline;
     }
 
@@ -246,6 +246,39 @@
       font-size: 0.875rem;
     }
 
+    .export-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .export-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .export-btn.pdf {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    .export-btn.csv {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    .export-btn:hover {
+      opacity: 0.9;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 1rem;
@@ -268,12 +301,12 @@
 <body>
   <div class="container">
     <div class="header text-center">
-      <h1>🔗 Broken Link Crawler Report</h1>
+      <h1>🔗 Broken Link Checker Report</h1>
     </div>
 
     <div class="stats-container">
       <div class="stat-card">
-        <h3>82</h3>
+        <h3>84</h3>
         <p>Total Links Checked</p>
       </div>
       <div class="stat-card">
@@ -295,11 +328,31 @@
       <div class="section-header" data-bs-toggle="collapse" data-bs-target="#working-links-section">
         <span class="emoji">✅</span>
         <h3>Working Links</h3>
-        <span class="badge">82</span>
+        <span class="badge">84</span>
         <span class="collapse-icon">▼</span>
       </div>
       <div class="collapse show" id="working-links-section">
         <div class="table-container">
+          <div class="table-controls mb-3">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                  </span>
+                  <input type="text" class="form-control search-input" id="search-working-links" placeholder="Search URLs...">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select status-filter" id="status-working-links">
+                  <option value="">Filter Status Codes</option>
+                  <option value="200">200 - OK</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <table class="data-table">
             <thead>
               <tr>
@@ -316,7 +369,7 @@
         <a href="https://dev.to/" target="_blank" rel="noopener noreferrer">https://dev.to/</a>
       </td>
       <td class="duration-cell duration-fast">
-        24ms
+        25ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
@@ -329,8 +382,8 @@
       <td class="url-cell">
         <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
       </td>
-      <td class="duration-cell duration-medium">
-        642ms
+      <td class="duration-cell duration-fast">
+        355ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
@@ -355,693 +408,7 @@
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/users/password/new" target="_blank" rel="noopener noreferrer">https://dev.to/users/password/new</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        830ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/privacy" target="_blank" rel="noopener noreferrer">https://dev.to/privacy</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        707ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/terms" target="_blank" rel="noopener noreferrer">https://dev.to/terms</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        717ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/code-of-conduct" target="_blank" rel="noopener noreferrer">https://dev.to/code-of-conduct</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        692ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/++" target="_blank" rel="noopener noreferrer">https://dev.to/++</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        81ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/pod" target="_blank" rel="noopener noreferrer">https://dev.to/pod</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        558ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/videos" target="_blank" rel="noopener noreferrer">https://dev.to/videos</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        524ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/tags" target="_blank" rel="noopener noreferrer">https://dev.to/tags</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        601ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/help" target="_blank" rel="noopener noreferrer">https://dev.to/help</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/advertise" target="_blank" rel="noopener noreferrer">https://dev.to/advertise</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        527ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/challenges" target="_blank" rel="noopener noreferrer">https://dev.to/challenges</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        520ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/showcase" target="_blank" rel="noopener noreferrer">https://dev.to/showcase</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        27ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/about" target="_blank" rel="noopener noreferrer">https://dev.to/about</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        665ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/contact" target="_blank" rel="noopener noreferrer">https://dev.to/contact</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        717ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/free-postgres-database-tier" target="_blank" rel="noopener noreferrer">https://dev.to/free-postgres-database-tier</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        80ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/software-comparisons" target="_blank" rel="noopener noreferrer">https://dev.to/software-comparisons</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        528ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/opensource" target="_blank" rel="noopener noreferrer">https://dev.to/t/opensource</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        538ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/rails" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        592ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/enter" target="_blank" rel="noopener noreferrer">https://dev.to/enter</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        539ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/" target="_blank" rel="noopener noreferrer">https://dev.to/</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/new/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/new/webdev</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        608ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/2</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        627ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/3</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        921ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/4</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        873ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/5</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        561ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/6" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/6</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        926ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/7" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/7</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        608ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/8" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/8</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        921ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/9" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/9</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        1023ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/75" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/75</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        613ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/webdev/page/4406" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev/page/4406</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/shubham-theqa/headspin-alternatives-with-better-roi-top-tools-compared-4j7o" target="_blank" rel="noopener noreferrer">https://dev.to/shubham-theqa/headspin-alternatives-with-better-roi-top-tools-compared-4j7o</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        616ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/shubham-theqa" target="_blank" rel="noopener noreferrer">https://dev.to/shubham-theqa</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        523ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/testing" target="_blank" rel="noopener noreferrer">https://dev.to/t/testing</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        1009ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/programming" target="_blank" rel="noopener noreferrer">https://dev.to/t/programming</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        615ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/ai" target="_blank" rel="noopener noreferrer">https://dev.to/t/ai</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        645ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/ajayhinduja/ajay-hinduja-techie-one-embracing-the-future-of-ai-technology-23gl" target="_blank" rel="noopener noreferrer">https://dev.to/ajayhinduja/ajay-hinduja-techie-one-embracing-the-future-of-ai-technology-23gl</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        580ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/ajayhinduja" target="_blank" rel="noopener noreferrer">https://dev.to/ajayhinduja</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        613ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/beginners" target="_blank" rel="noopener noreferrer">https://dev.to/t/beginners</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        1025ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/shayy/your-feedback-form-is-lying-to-you-19o8" target="_blank" rel="noopener noreferrer">https://dev.to/shayy/your-feedback-form-is-lying-to-you-19o8</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        25ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/shayy" target="_blank" rel="noopener noreferrer">https://dev.to/shayy</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        204ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/saas" target="_blank" rel="noopener noreferrer">https://dev.to/t/saas</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        793ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/product" target="_blank" rel="noopener noreferrer">https://dev.to/t/product</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/devteam/deadline-extended-for-the-alibaba-cloud-web-game-challenge-45ip" target="_blank" rel="noopener noreferrer">https://dev.to/devteam/deadline-extended-for-the-alibaba-cloud-web-game-challenge-45ip</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/devteam" target="_blank" rel="noopener noreferrer">https://dev.to/devteam</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/thepracticaldev" target="_blank" rel="noopener noreferrer">https://dev.to/thepracticaldev</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/alibabachallenge" target="_blank" rel="noopener noreferrer">https://dev.to/t/alibabachallenge</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        717ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/gamedev" target="_blank" rel="noopener noreferrer">https://dev.to/t/gamedev</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        614ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/devchallenge" target="_blank" rel="noopener noreferrer">https://dev.to/t/devchallenge</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        1024ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/manishtamang/the-rise-of-ai-agents-mcp-servers-and-n8n-what-you-need-to-know-in-2025-2eol" target="_blank" rel="noopener noreferrer">https://dev.to/manishtamang/the-rise-of-ai-agents-mcp-servers-and-n8n-what-you-need-to-know-in-2025-2eol</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        210ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/manishtamang" target="_blank" rel="noopener noreferrer">https://dev.to/manishtamang</a>
+        <a href="https://dev.to/users/sign_up?state=email_signup" target="_blank" rel="noopener noreferrer">https://dev.to/users/sign_up?state=email_signup</a>
       </td>
       <td class="duration-cell duration-medium">
         609ms
@@ -1050,96 +417,12 @@
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/enter?state=new-user" target="_blank" rel="noopener noreferrer">https://dev.to/enter?state=new-user</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/mcp" target="_blank" rel="noopener noreferrer">https://dev.to/t/mcp</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        716ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/aiagent" target="_blank" rel="noopener noreferrer">https://dev.to/t/aiagent</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        537ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/robin-ivi/php-is-now-the-best-choice-for-web-based-software-4fpf" target="_blank" rel="noopener noreferrer">https://dev.to/robin-ivi/php-is-now-the-best-choice-for-web-based-software-4fpf</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        639ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/robin-ivi" target="_blank" rel="noopener noreferrer">https://dev.to/robin-ivi</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        564ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/php" target="_blank" rel="noopener noreferrer">https://dev.to/t/php</a>
-      </td>
-      <td class="duration-cell duration-fast">
-        214ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/t/coding" target="_blank" rel="noopener noreferrer">https://dev.to/t/coding</a>
-      </td>
-      <td class="duration-cell duration-medium">
-        605ms
-      </td>
-      <td class="status-cell">
-        <span class="status-badge success">200</span>
-      </td>
-      <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
-      </td>
-    </tr>
-    <tr>
-      <td class="url-cell">
-        <a href="https://dev.to/techondiapers/build-along-with-me-a-beginners-guide-to-creating-a-student-api-using-flask-5kn" target="_blank" rel="noopener noreferrer">https://dev.to/techondiapers/build-along-with-me-a-beginners-guide-to-creating-a-student-api-using-flask-5kn</a>
+        <a href="https://dev.to/tags" target="_blank" rel="noopener noreferrer">https://dev.to/tags</a>
       </td>
       <td class="duration-cell duration-fast">
         26ms
@@ -1148,54 +431,824 @@
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/users/sign_up?state=email_signup" target="_blank" rel="noopener noreferrer">https://dev.to/users/sign_up?state=email_signup</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/techondiapers" target="_blank" rel="noopener noreferrer">https://dev.to/techondiapers</a>
+        <a href="https://dev.to/dashboard/following_tags" target="_blank" rel="noopener noreferrer">https://dev.to/dashboard/following_tags</a>
       </td>
-      <td class="duration-cell duration-medium">
-        588ms
+      <td class="duration-cell duration-slow">
+        1624ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/tags" target="_blank" rel="noopener noreferrer">https://dev.to/tags</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/sre" target="_blank" rel="noopener noreferrer">https://dev.to/t/sre</a>
+        <a href="https://dev.to/users/password/new" target="_blank" rel="noopener noreferrer">https://dev.to/users/password/new</a>
       </td>
-      <td class="duration-cell duration-medium">
-        613ms
+      <td class="duration-cell duration-fast">
+        314ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/dashboard/following_tags" target="_blank" rel="noopener noreferrer">https://dev.to/dashboard/following_tags</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/flask" target="_blank" rel="noopener noreferrer">https://dev.to/t/flask</a>
+        <a href="https://dev.to/about" target="_blank" rel="noopener noreferrer">https://dev.to/about</a>
       </td>
       <td class="duration-cell duration-medium">
-        534ms
+        719ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/users/password/new" target="_blank" rel="noopener noreferrer">https://dev.to/users/password/new</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/python" target="_blank" rel="noopener noreferrer">https://dev.to/t/python</a>
+        <a href="https://dev.to/ben" target="_blank" rel="noopener noreferrer">https://dev.to/ben</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        575ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/about" target="_blank" rel="noopener noreferrer">https://dev.to/about</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/++" target="_blank" rel="noopener noreferrer">https://dev.to/++</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        25ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/ben" target="_blank" rel="noopener noreferrer">https://dev.to/ben</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/stripe_subscriptions/new" target="_blank" rel="noopener noreferrer">https://dev.to/stripe_subscriptions/new</a>
+      </td>
+      <td class="duration-cell duration-slow">
+        1611ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/++" target="_blank" rel="noopener noreferrer">https://dev.to/++</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/privacy" target="_blank" rel="noopener noreferrer">https://dev.to/privacy</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        676ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/stripe_subscriptions/new" target="_blank" rel="noopener noreferrer">https://dev.to/stripe_subscriptions/new</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/terms" target="_blank" rel="noopener noreferrer">https://dev.to/terms</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        604ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/privacy" target="_blank" rel="noopener noreferrer">https://dev.to/privacy</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/contact" target="_blank" rel="noopener noreferrer">https://dev.to/contact</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        713ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/terms" target="_blank" rel="noopener noreferrer">https://dev.to/terms</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/security" target="_blank" rel="noopener noreferrer">https://dev.to/security</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        604ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/contact" target="_blank" rel="noopener noreferrer">https://dev.to/contact</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/kkrypt0nn" target="_blank" rel="noopener noreferrer">https://dev.to/kkrypt0nn</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        205ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/security" target="_blank" rel="noopener noreferrer">https://dev.to/security</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/kkrypt0nn/generating-unique-ids-with-the-snowflake-algorithm-5889" target="_blank" rel="noopener noreferrer">https://dev.to/kkrypt0nn/generating-unique-ids-with-the-snowflake-algorithm-5889</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        747ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/kkrypt0nn" target="_blank" rel="noopener noreferrer">https://dev.to/kkrypt0nn</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/report-abuse" target="_blank" rel="noopener noreferrer">https://dev.to/report-abuse</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        652ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/kkrypt0nn/generating-unique-ids-with-the-snowflake-algorithm-5889" target="_blank" rel="noopener noreferrer">https://dev.to/kkrypt0nn/generating-unique-ids-with-the-snowflake-algorithm-5889</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/code-of-conduct" target="_blank" rel="noopener noreferrer">https://dev.to/code-of-conduct</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        299ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/report-abuse" target="_blank" rel="noopener noreferrer">https://dev.to/report-abuse</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/how-to-avoid-plagiarism" target="_blank" rel="noopener noreferrer">https://dev.to/how-to-avoid-plagiarism</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        625ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/code-of-conduct" target="_blank" rel="noopener noreferrer">https://dev.to/code-of-conduct</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/devteam/dev-community-how-to-avoid-plagiarism-4kia" target="_blank" rel="noopener noreferrer">https://dev.to/devteam/dev-community-how-to-avoid-plagiarism-4kia</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        785ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/how-to-avoid-plagiarism" target="_blank" rel="noopener noreferrer">https://dev.to/how-to-avoid-plagiarism</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/devteam" target="_blank" rel="noopener noreferrer">https://dev.to/devteam</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        28ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/devteam/dev-community-how-to-avoid-plagiarism-4kia" target="_blank" rel="noopener noreferrer">https://dev.to/devteam/dev-community-how-to-avoid-plagiarism-4kia</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/jess" target="_blank" rel="noopener noreferrer">https://dev.to/jess</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        224ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/devteam" target="_blank" rel="noopener noreferrer">https://dev.to/devteam</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/bytesized" target="_blank" rel="noopener noreferrer">https://dev.to/bytesized</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        609ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/jess" target="_blank" rel="noopener noreferrer">https://dev.to/jess</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/vaidehijoshi" target="_blank" rel="noopener noreferrer">https://dev.to/vaidehijoshi</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        30ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/bytesized" target="_blank" rel="noopener noreferrer">https://dev.to/bytesized</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/vaidehijoshi/i-m-vaidehi-joshi-senior-software-engineer-at-dev-forem-ama-5b00" target="_blank" rel="noopener noreferrer">https://dev.to/vaidehijoshi/i-m-vaidehi-joshi-senior-software-engineer-at-dev-forem-ama-5b00</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        581ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/vaidehijoshi" target="_blank" rel="noopener noreferrer">https://dev.to/vaidehijoshi</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/ama" target="_blank" rel="noopener noreferrer">https://dev.to/t/ama</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        566ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/vaidehijoshi/i-m-vaidehi-joshi-senior-software-engineer-at-dev-forem-ama-5b00" target="_blank" rel="noopener noreferrer">https://dev.to/vaidehijoshi/i-m-vaidehi-joshi-senior-software-engineer-at-dev-forem-ama-5b00</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/ama" target="_blank" rel="noopener noreferrer">https://dev.to/new/ama</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        886ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/ama" target="_blank" rel="noopener noreferrer">https://dev.to/t/ama</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/opensource" target="_blank" rel="noopener noreferrer">https://dev.to/t/opensource</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        546ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/new/ama" target="_blank" rel="noopener noreferrer">https://dev.to/new/ama</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/opensource" target="_blank" rel="noopener noreferrer">https://dev.to/new/opensource</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        839ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/opensource" target="_blank" rel="noopener noreferrer">https://dev.to/t/opensource</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/rails" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        26ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/new/opensource" target="_blank" rel="noopener noreferrer">https://dev.to/new/opensource</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/rails" target="_blank" rel="noopener noreferrer">https://dev.to/new/rails</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        642ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/rails/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/2</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        545ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/rails/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/3</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        794ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/2</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/rails/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/4</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        1180ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/3</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/rails/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/5</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        545ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/4</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/jmhooper/how-to-write-on-a-pdf-using-ruby-4aeh" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper/how-to-write-on-a-pdf-using-ruby-4aeh</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        884ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/rails/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/rails/page/5</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/jmhooper" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        703ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/jmhooper/how-to-write-on-a-pdf-using-ruby-4aeh" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper/how-to-write-on-a-pdf-using-ruby-4aeh</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/jmhooper/setting-up-tailwind-css-in-a-new-rails-app-3g2g" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper/setting-up-tailwind-css-in-a-new-rails-app-3g2g</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        563ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/jmhooper" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/tailwindcss" target="_blank" rel="noopener noreferrer">https://dev.to/t/tailwindcss</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        724ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/jmhooper/setting-up-tailwind-css-in-a-new-rails-app-3g2g" target="_blank" rel="noopener noreferrer">https://dev.to/jmhooper/setting-up-tailwind-css-in-a-new-rails-app-3g2g</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/tailwindcss" target="_blank" rel="noopener noreferrer">https://dev.to/new/tailwindcss</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        280ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/tailwindcss" target="_blank" rel="noopener noreferrer">https://dev.to/t/tailwindcss</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/aeon_roamer/built-a-coffee-website-in-2-days-with-nextjs-tailwind-css-2997" target="_blank" rel="noopener noreferrer">https://dev.to/aeon_roamer/built-a-coffee-website-in-2-days-with-nextjs-tailwind-css-2997</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        536ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/tailwindcss" target="_blank" rel="noopener noreferrer">https://dev.to/t/tailwindcss</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/aeon_roamer" target="_blank" rel="noopener noreferrer">https://dev.to/aeon_roamer</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        533ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/aeon_roamer/built-a-coffee-website-in-2-days-with-nextjs-tailwind-css-2997" target="_blank" rel="noopener noreferrer">https://dev.to/aeon_roamer/built-a-coffee-website-in-2-days-with-nextjs-tailwind-css-2997</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/nextjs" target="_blank" rel="noopener noreferrer">https://dev.to/t/nextjs</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        658ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/aeon_roamer" target="_blank" rel="noopener noreferrer">https://dev.to/aeon_roamer</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/nextjs" target="_blank" rel="noopener noreferrer">https://dev.to/new/nextjs</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        765ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/nextjs" target="_blank" rel="noopener noreferrer">https://dev.to/t/nextjs</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/nextjs/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/nextjs/page/2</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        1019ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/nextjs" target="_blank" rel="noopener noreferrer">https://dev.to/t/nextjs</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/ficav/building-an-nsfw-ai-text-to-image-generator-with-nextjs-and-tailwind-css-578h" target="_blank" rel="noopener noreferrer">https://dev.to/ficav/building-an-nsfw-ai-text-to-image-generator-with-nextjs-and-tailwind-css-578h</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        540ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/nextjs/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/nextjs/page/2</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/ficav" target="_blank" rel="noopener noreferrer">https://dev.to/ficav</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        574ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/ficav/building-an-nsfw-ai-text-to-image-generator-with-nextjs-and-tailwind-css-578h" target="_blank" rel="noopener noreferrer">https://dev.to/ficav/building-an-nsfw-ai-text-to-image-generator-with-nextjs-and-tailwind-css-578h</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/react" target="_blank" rel="noopener noreferrer">https://dev.to/t/react</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        27ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/ficav" target="_blank" rel="noopener noreferrer">https://dev.to/ficav</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/react" target="_blank" rel="noopener noreferrer">https://dev.to/new/react</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        906ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/react" target="_blank" rel="noopener noreferrer">https://dev.to/t/react</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/p/editor_guide" target="_blank" rel="noopener noreferrer">https://dev.to/p/editor_guide</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        783ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/react" target="_blank" rel="noopener noreferrer">https://dev.to/t/react</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/settings/customization" target="_blank" rel="noopener noreferrer">https://dev.to/settings/customization</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        1319ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/p/editor_guide" target="_blank" rel="noopener noreferrer">https://dev.to/p/editor_guide</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/hoverbaum/how-to-add-code-highlighting-to-your-devto-posts-2lp6" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum/how-to-add-code-highlighting-to-your-devto-posts-2lp6</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        223ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/react" target="_blank" rel="noopener noreferrer">https://dev.to/t/react</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/hoverbaum" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        544ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/hoverbaum/how-to-add-code-highlighting-to-your-devto-posts-2lp6" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum/how-to-add-code-highlighting-to-your-devto-posts-2lp6</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/hoverbaum/today-i-learned-about-place-items-37a9" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum/today-i-learned-about-place-items-37a9</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        454ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/hoverbaum" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/todayilearned" target="_blank" rel="noopener noreferrer">https://dev.to/t/todayilearned</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        227ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/hoverbaum/today-i-learned-about-place-items-37a9" target="_blank" rel="noopener noreferrer">https://dev.to/hoverbaum/today-i-learned-about-place-items-37a9</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/todayilearned" target="_blank" rel="noopener noreferrer">https://dev.to/new/todayilearned</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        810ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/todayilearned" target="_blank" rel="noopener noreferrer">https://dev.to/t/todayilearned</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/blikblum/til-how-to-reference-the-item-type-of-an-array-type-2j0g" target="_blank" rel="noopener noreferrer">https://dev.to/blikblum/til-how-to-reference-the-item-type-of-an-array-type-2j0g</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        601ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/todayilearned" target="_blank" rel="noopener noreferrer">https://dev.to/t/todayilearned</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/blikblum" target="_blank" rel="noopener noreferrer">https://dev.to/blikblum</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        225ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/blikblum/til-how-to-reference-the-item-type-of-an-array-type-2j0g" target="_blank" rel="noopener noreferrer">https://dev.to/blikblum/til-how-to-reference-the-item-type-of-an-array-type-2j0g</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/typescript" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript</a>
+      </td>
+      <td class="duration-cell duration-fast">
+        214ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/blikblum" target="_blank" rel="noopener noreferrer">https://dev.to/blikblum</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/new/typescript" target="_blank" rel="noopener noreferrer">https://dev.to/new/typescript</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        734ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/typescript" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/typescript/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/2</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        1014ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/typescript" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/typescript/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/3</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        965ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/typescript/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/2</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/typescript/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/4</a>
       </td>
       <td class="duration-cell duration-fast">
         209ms
@@ -1204,259 +1257,287 @@
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/3</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/dct_technology/dont-just-build-it-containerize-it-master-aspnet-core-with-docker-before-its-too-late-14n2" target="_blank" rel="noopener noreferrer">https://dev.to/dct_technology/dont-just-build-it-containerize-it-master-aspnet-core-with-docker-before-its-too-late-14n2</a>
+        <a href="https://dev.to/t/typescript/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/5</a>
       </td>
       <td class="duration-cell duration-medium">
-        529ms
+        610ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/4</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/dct_technology" target="_blank" rel="noopener noreferrer">https://dev.to/dct_technology</a>
+        <a href="https://dev.to/t/typescript/page/6" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/6</a>
       </td>
       <td class="duration-cell duration-medium">
-        1156ms
+        547ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/5</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/aspnetcore" target="_blank" rel="noopener noreferrer">https://dev.to/t/aspnetcore</a>
+        <a href="https://dev.to/t/typescript/page/7" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/7</a>
       </td>
       <td class="duration-cell duration-medium">
-        541ms
+        1165ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/6" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/6</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/docker" target="_blank" rel="noopener noreferrer">https://dev.to/t/docker</a>
+        <a href="https://dev.to/t/typescript/page/8" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/8</a>
       </td>
       <td class="duration-cell duration-medium">
-        565ms
+        580ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/7" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/7</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/containers" target="_blank" rel="noopener noreferrer">https://dev.to/t/containers</a>
+        <a href="https://dev.to/t/typescript/page/9" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/9</a>
       </td>
       <td class="duration-cell duration-medium">
-        924ms
+        1020ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/8" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/8</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/unbothered_dev/four-card-feature-section-frontend-mentor-challenge-html-css-31" target="_blank" rel="noopener noreferrer">https://dev.to/unbothered_dev/four-card-feature-section-frontend-mentor-challenge-html-css-31</a>
+        <a href="https://dev.to/t/typescript/page/10" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/10</a>
       </td>
       <td class="duration-cell duration-medium">
-        556ms
+        1235ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/9" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/9</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/unbothered_dev" target="_blank" rel="noopener noreferrer">https://dev.to/unbothered_dev</a>
+        <a href="https://dev.to/holasoymalva/stop-using-typescript-for-small-projects-47hl" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva/stop-using-typescript-for-small-projects-47hl</a>
       </td>
       <td class="duration-cell duration-medium">
-        616ms
+        875ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/typescript/page/10" target="_blank" rel="noopener noreferrer">https://dev.to/t/typescript/page/10</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/html" target="_blank" rel="noopener noreferrer">https://dev.to/t/html</a>
+        <a href="https://dev.to/holasoymalva" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva</a>
       </td>
       <td class="duration-cell duration-medium">
-        611ms
+        958ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/holasoymalva/stop-using-typescript-for-small-projects-47hl" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva/stop-using-typescript-for-small-projects-47hl</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/css" target="_blank" rel="noopener noreferrer">https://dev.to/t/css</a>
+        <a href="https://dev.to/holasoymalva/why-python-is-a-terrible-first-language-2inj" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva/why-python-is-a-terrible-first-language-2inj</a>
       </td>
-      <td class="duration-cell duration-medium">
-        538ms
+      <td class="duration-cell duration-fast">
+        275ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/holasoymalva" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/cssflexbox" target="_blank" rel="noopener noreferrer">https://dev.to/t/cssflexbox</a>
+        <a href="https://dev.to/t/python" target="_blank" rel="noopener noreferrer">https://dev.to/t/python</a>
       </td>
       <td class="duration-cell duration-medium">
-        589ms
+        638ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/holasoymalva/why-python-is-a-terrible-first-language-2inj" target="_blank" rel="noopener noreferrer">https://dev.to/holasoymalva/why-python-is-a-terrible-first-language-2inj</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/im_ashish30/your-connection-is-not-private-error-meaning-causes-and-fixes-30h6" target="_blank" rel="noopener noreferrer">https://dev.to/im_ashish30/your-connection-is-not-private-error-meaning-causes-and-fixes-30h6</a>
+        <a href="https://dev.to/new/python" target="_blank" rel="noopener noreferrer">https://dev.to/new/python</a>
       </td>
-      <td class="duration-cell duration-medium">
-        613ms
+      <td class="duration-cell duration-fast">
+        364ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python" target="_blank" rel="noopener noreferrer">https://dev.to/t/python</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/im_ashish30" target="_blank" rel="noopener noreferrer">https://dev.to/im_ashish30</a>
+        <a href="https://dev.to/t/python/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/2</a>
       </td>
-      <td class="duration-cell duration-medium">
-        525ms
+      <td class="duration-cell duration-slow">
+        1528ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python" target="_blank" rel="noopener noreferrer">https://dev.to/t/python</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/security" target="_blank" rel="noopener noreferrer">https://dev.to/t/security</a>
+        <a href="https://dev.to/t/python/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/3</a>
       </td>
       <td class="duration-cell duration-medium">
-        535ms
+        977ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/2" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/2</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/t/javascript" target="_blank" rel="noopener noreferrer">https://dev.to/t/javascript</a>
+        <a href="https://dev.to/t/python/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/4</a>
       </td>
       <td class="duration-cell duration-medium">
-        539ms
+        871ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/3" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/3</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/shelner/site-editor-rough-design-344j" target="_blank" rel="noopener noreferrer">https://dev.to/shelner/site-editor-rough-design-344j</a>
+        <a href="https://dev.to/t/python/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/5</a>
       </td>
       <td class="duration-cell duration-medium">
-        551ms
+        570ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/4" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/4</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/shelner" target="_blank" rel="noopener noreferrer">https://dev.to/shelner</a>
+        <a href="https://dev.to/t/python/page/6" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/6</a>
       </td>
       <td class="duration-cell duration-medium">
-        614ms
+        1076ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/5" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/5</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/davinceleecode/linq-in-entity-framework-you-should-know-43i6" target="_blank" rel="noopener noreferrer">https://dev.to/davinceleecode/linq-in-entity-framework-you-should-know-43i6</a>
+        <a href="https://dev.to/t/python/page/7" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/7</a>
       </td>
       <td class="duration-cell duration-medium">
-        529ms
+        545ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/6" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/6</a>
       </td>
     </tr>
     <tr>
       <td class="url-cell">
-        <a href="https://dev.to/davinceleecode" target="_blank" rel="noopener noreferrer">https://dev.to/davinceleecode</a>
+        <a href="https://dev.to/t/python/page/8" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/8</a>
       </td>
       <td class="duration-cell duration-medium">
-        802ms
+        1101ms
       </td>
       <td class="status-cell">
         <span class="status-badge success">200</span>
       </td>
       <td class="source-cell">
-        <a href="https://dev.to/t/webdev" target="_blank" rel="noopener noreferrer">https://dev.to/t/webdev</a>
+        <a href="https://dev.to/t/python/page/7" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/7</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/python/page/9" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/9</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        1199ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/python/page/8" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/8</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="url-cell">
+        <a href="https://dev.to/t/python/page/10" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/10</a>
+      </td>
+      <td class="duration-cell duration-medium">
+        656ms
+      </td>
+      <td class="status-cell">
+        <span class="status-badge success">200</span>
+      </td>
+      <td class="source-cell">
+        <a href="https://dev.to/t/python/page/9" target="_blank" rel="noopener noreferrer">https://dev.to/t/python/page/9</a>
       </td>
     </tr>
             </tbody>
@@ -1492,18 +1573,68 @@
       </div>
     
 
+    <div class="export-buttons">
+      <button class="export-btn pdf" onclick="exportToPDF()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M5.523 12.424c.14-.082.293-.162.459-.238a7.878 7.878 0 0 1-.45.606c-.28.337-.498.516-.635.572a.266.266 0 0 1-.035.012.282.282 0 0 1-.026-.044c-.056-.11-.054-.216.04-.36.106-.165.319-.354.647-.548zm2.455-1.647c-.119.025-.237.05-.356.078a21.148 21.148 0 0 0 .5-1.05 12.045 12.045 0 0 0 .51.858c.217.272.368.46.422.567a.09.09 0 0 1 .01.025.06.06 0 0 1 .01.01c.01.01.01.01.01.01l.01-.01a.09.09 0 0 1 .01-.025c.054-.107.205-.295.422-.567.16-.2.33-.43.51-.858a21.148 21.148 0 0 0-.5-1.05c-.12.028-.238.053-.356.078a21.148 21.148 0 0 0 .5 1.05c.16.2.33.43.51.858a21.148 21.148 0 0 0-.5 1.05zm2.455-1.647c-.119.025-.237.05-.356.078a21.148 21.148 0 0 0 .5-1.05 12.045 12.045 0 0 0 .51.858c.217.272.368.46.422.567a.09.09 0 0 1 .01.025.06.06 0 0 1 .01.01c.01.01.01.01.01.01l.01-.01a.09.09 0 0 1 .01-.025c.054-.107.205-.295.422-.567.16-.2.33-.43.51-.858a21.148 21.148 0 0 0-.5-1.05c-.12.028-.238.053-.356.078a21.148 21.148 0 0 0 .5 1.05c.16.2.33.43.51.858a21.148 21.148 0 0 0-.5 1.05z"/>
+          <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+        </svg>
+        Export as PDF
+      </button>
+      <button class="export-btn csv" onclick="exportToCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
+        Export as CSV
+      </button>
+    </div>
+
     <div class="footer">
-      <p>Generated on 4/12/2025, 6:24:33 AM</p>
+      <p>Generated on 4/13/2025, 7:47:28 PM</p>
+      <p>Like this tool? Show your support by giving a <a href="https://github.com/LucaAhumada/broken-link-checker" target="_blank" rel="noopener noreferrer">Star</a>!</p>
     </div>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Store the initial state of the report
+      const initialReportState = document.querySelector('.container').innerHTML;
+      
       // Add click handlers for collapsible sections
       document.querySelectorAll('.section-header').forEach(header => {
         header.addEventListener('click', function() {
           this.classList.toggle('collapsed');
         });
+      });
+
+      // Add search and filter functionality for each section
+      document.querySelectorAll('.section').forEach(section => {
+        const searchInput = section.querySelector('.search-input');
+        const statusFilter = section.querySelector('.status-filter');
+        const table = section.querySelector('.data-table');
+        
+        if (searchInput && statusFilter && table) {
+          const tbody = table.querySelector('tbody');
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+
+          function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusCode = statusFilter.value;
+
+            rows.forEach(row => {
+              const url = row.querySelector('.url-cell').textContent.toLowerCase();
+              const status = row.querySelector('.status-badge').textContent.trim();
+              const matchesSearch = url.includes(searchTerm);
+              const matchesStatus = !statusCode || status.startsWith(statusCode);
+
+              row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+            });
+          }
+
+          searchInput.addEventListener('input', filterTable);
+          statusFilter.addEventListener('change', filterTable);
+        }
       });
 
       // Add sorting functionality to tables
@@ -1553,6 +1684,146 @@
           rows.forEach(row => tbody.appendChild(row));
         });
       });
+
+      // Export to PDF functionality
+      window.exportToPDF = async function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        try {
+          console.log('Starting PDF generation...');
+          
+          // Create a temporary container with the initial state
+          const tempContainer = document.createElement('div');
+          tempContainer.innerHTML = initialReportState;
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.left = '-9999px';
+          tempContainer.style.width = '1200px';
+          document.body.appendChild(tempContainer);
+          
+          console.log('Temporary container created');
+          
+          // Ensure all sections are expanded in the temporary container
+          const sections = tempContainer.querySelectorAll('.section');
+          sections.forEach(section => {
+            const collapse = section.querySelector('.collapse');
+            if (collapse) {
+              collapse.classList.add('show');
+              const header = section.querySelector('.section-header');
+              if (header) {
+                header.classList.remove('collapsed');
+              }
+            }
+          });
+          
+          console.log('Sections expanded');
+          
+          // Wait a moment for the DOM to update
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Use html2canvas to capture the report with optimized settings
+          console.log('Starting html2canvas...');
+          const canvas = await html2canvas(tempContainer, {
+            scale: 1, // Reduced from 2
+            useCORS: true,
+            logging: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: tempContainer.offsetWidth,
+            height: tempContainer.offsetHeight,
+            windowWidth: tempContainer.offsetWidth,
+            windowHeight: tempContainer.offsetHeight,
+            imageTimeout: 0, // Disable image timeout
+            removeContainer: true // Clean up temporary elements
+          });
+          
+          console.log('Canvas created');
+          
+          // Remove the temporary container
+          document.body.removeChild(tempContainer);
+          
+          // Convert canvas to JPEG with quality optimization
+          const imgData = canvas.toDataURL('image/jpeg', 0.85); // Using JPEG with 85% quality
+          console.log('Image data created');
+          
+          const imgWidth = 210; // A4 width in mm
+          const pageHeight = 295; // A4 height in mm
+          const imgHeight = canvas.height * imgWidth / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+          
+          // Add the first page
+          doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          
+          // Add new pages if content is longer than one page
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            doc.addPage();
+            doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+          
+          console.log('PDF generation complete');
+          // Save the PDF
+          doc.save('broken-link-report.pdf');
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          console.error('Error stack:', error.stack);
+          alert('There was an error generating the PDF. Please check the console for details.');
+        }
+      };
+
+      // Export to CSV functionality
+      window.exportToCSV = function() {
+        // Get all tables
+        const tables = document.querySelectorAll('.data-table');
+        let csvContent = '';
+        
+        tables.forEach((table, tableIndex) => {
+          const title = table.closest('.section').querySelector('h3').textContent;
+          csvContent += title + '\n';
+          
+          // Get headers
+          const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent);
+          csvContent += headers.join(',') + '\n';
+          
+          // Get rows
+          const rows = table.querySelectorAll('tbody tr');
+          rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td')).map(td => {
+              let content = td.textContent.trim();
+              // Handle links
+              const link = td.querySelector('a');
+              if (link) {
+                content = link.href;
+              }
+              // Escape commas and quotes
+              if (content.includes(',') || content.includes('"')) {
+                content = '"' + content.replace(/"/g, '""') + '"';
+              }
+              return content;
+            });
+            csvContent += cells.join(',') + '\n';
+          });
+          
+          // Add a blank line between tables
+          if (tableIndex < tables.length - 1) {
+            csvContent += '\n';
+          }
+        });
+        
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'broken-link-report.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
     });
   </script>
 </body>
